@@ -78,16 +78,18 @@ MainLoop:
 			}
 
 			if len(services) == 0 {
-				cmd = exec.Command(composeBin, "up", "-d")
+				cmd = exec.Command(composeBin, "up")
 			} else {
-				args := []string{"up", "-d", "--no-deps"}
+				args := []string{"up", "--no-deps"}
 				args = append(args, services...)
 				cmd = exec.Command(composeBin, args...)
 			}
 
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
-			cmd.Run()
+			if err := cmd.Start(); err != nil {
+				fmt.Fprintf(os.Stderr, "error reloading compose file: %v", err)
+			}
 			ignore = true
 			time.Sleep(1 * time.Second)
 			lr.Reload("")
