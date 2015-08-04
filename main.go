@@ -20,8 +20,9 @@ func main() {
 			Name:  "watch",
 			Value: &cli.StringSlice{"."},
 		},
-		cli.StringFlag{
-			Name: "service",
+		cli.StringSliceFlag{
+			Name:  "service",
+			Value: &cli.StringSlice{},
 		},
 	}
 
@@ -31,6 +32,7 @@ func main() {
 
 func run(ctx *cli.Context) {
 	watchDirs := ctx.StringSlice("watch")
+	services := ctx.StringSlice("service")
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -55,8 +57,8 @@ func run(ctx *cli.Context) {
 
 	var cmd *exec.Cmd
 	var t <-chan time.Time
-
 	var ignore bool
+
 MainLoop:
 	for {
 		select {
@@ -75,10 +77,12 @@ MainLoop:
 				}
 			}
 
-			if ctx.String("service") == "" {
+			if len(services) == 0 {
 				cmd = exec.Command(composeBin, "up", "-d")
 			} else {
-				cmd = exec.Command(composeBin, "up", "-d", ctx.String("service"))
+				args := []string{"up", "-d", "--no-deps"}
+				args = append(args, services...)
+				cmd = exec.Command(composeBin, args...)
 			}
 
 			cmd.Stdout = os.Stdout
